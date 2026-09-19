@@ -1,0 +1,54 @@
+name: Debug LLM endpoint
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping endpoint with secrets
+        env:
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        run: |
+          node -e '
+          const base = (process.env.OPENAI_BASE_URL || "").replace(/\/$/, "");
+          const model = process.env.OPENAI_MODEL || "";
+          const key = process.env.OPENAI_API_KEY || "";
+          if (!base || !key) { console.log("missing env:", !base ? "BASE_URL" : "KEY"); process.exit(0); }
+          let host = "?", path = "?";
+          try { const u = new URL(base); host = u.host; path = u.pathname; } catch {}
+          console.log("endpoint host:", host);
+          console.log("endpoint path:", path);
+          console.log("model name length:", model.length);
+          (async () => {
+            const tests = [
+              ["GET /models", "/models", { headers: { Authorization: `Bearer ${key}` } }],
+              ["POST /chat/completions (real model, 10 max_tokens)", "/chat/completions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ model, messages: [{ role: "user", content: "Reply with exactly: ok" }], max_tokens: 10, temperature: 0.2 }),
+              }],
+              ["POST /chat/completions (real model, 4096 max_tokens)", "/chat/completions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ model, messages: [{ role: "user", content: "Write a one-paragraph markdown summary about AI agents." }], max_tokens: 4096, temperature: 0.2 }),
+              }],
+            ];
+            for (const [label, p, init] of tests) {
+              const t0 = Date.now();
+              try {
+                const r = await fetch(base + p, init);
+                const text = await r.text();
+                console.log(`--- ${label}`);
+                console.log("http:", r.status, "elapsed_ms:", Date.now() - t0);
+                console.log("body_head:", text.slice(0, 500).replace(key, "<key>"));
+              } catch (e) {
+                console.log(`--- ${label}`);
+                console.log("fetch_error:", String(e).slice(0, 300));
+              }
+            }
+          })();
+          '
