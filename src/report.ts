@@ -119,6 +119,15 @@ function extractTextContent(content: unknown): string {
   throw new Error("Unexpected response type from LLM");
 }
 
+// GLM coding endpoints emit `reasoning_content` before `content`; on report-sized
+// prompts glm-5.x thinking can exhaust max_tokens and return an empty `content`
+// (finish_reason=length), which extractTextContent rejects. Disable thinking for
+// these endpoints — digests need direct output, not reasoning.
+function glmThinkingDisabled(): boolean {
+  const base = getLlmBaseUrl().toLowerCase();
+  return base.includes("z.ai") || base.includes("bigmodel");
+}
+
 export async function callLlm(
   prompt: string,
   maxTokens = 4096,
@@ -142,6 +151,7 @@ export async function callLlm(
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
           max_tokens: maxTokens,
+          ...(glmThinkingDisabled() ? { thinking: { type: "disabled" } } : {}),
         }),
       });
       if (!resp.ok) {

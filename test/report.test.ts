@@ -5,6 +5,7 @@ import { callLlm, EmptyLlmResponseError } from "../src/report.ts";
 
 const originalFetch = globalThis.fetch;
 const originalApiKey = process.env["OPENAI_API_KEY"];
+const originalBaseUrl = process.env["OPENAI_BASE_URL"];
 
 beforeEach(() => {
   process.env["OPENAI_API_KEY"] = "test-key";
@@ -14,6 +15,8 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
   if (originalApiKey === undefined) delete process.env["OPENAI_API_KEY"];
   else process.env["OPENAI_API_KEY"] = originalApiKey;
+  if (originalBaseUrl === undefined) delete process.env["OPENAI_BASE_URL"];
+  else process.env["OPENAI_BASE_URL"] = originalBaseUrl;
 });
 
 function response(content: unknown): Response {
@@ -125,4 +128,30 @@ test("does not retry a missing response content field", async () => {
     /Unexpected response type from LLM/,
   );
   assert.equal(calls, 1);
+});
+
+test("disables thinking for GLM coding endpoints", async () => {
+  const bodies: Record<string, unknown>[] = [];
+  globalThis.fetch = async (_input, init) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return response("ok");
+  };
+  process.env["OPENAI_BASE_URL"] = "https://api.z.ai/api/coding/paas/v4";
+
+  await callLlm("prompt", 4096, { sleep: async () => undefined });
+
+  assert.deepEqual(bodies[0]?.["thinking"], { type: "disabled" });
+});
+
+test("omits the thinking flag for non-GLM endpoints", async () => {
+  const bodies: unknown[] = [];
+  globalThis.fetch = async (_input, init) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return response("ok");
+  };
+  process.env["OPENAI_BASE_URL"] = "https://api.openai.com/v1";
+
+  await callLlm("prompt", 4096, { sleep: async () => undefined });
+
+  assert.equal("thinking" in (bodies[0] as Record<string, unknown>), false);
 });
