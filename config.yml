@@ -1,18 +1,199 @@
-# agents-radar configuration
-# Only generate OpenClaw ecosystem daily report
+# Art Radar configuration
+#
+# Everything the radar tracks lives here — no code changes needed.
+# Delete a section (or this whole file) to fall back to the built-in defaults.
+# Run `pnpm probe` after editing to check that every source is reachable.
 
-cli_repos: []
+# ---------------------------------------------------------------------------
+# Artist-facing tools: applications and CLIs that artists actually run.
+# Each entry gets its own digest section plus a cross-tool comparison.
+# ---------------------------------------------------------------------------
+tools:
+  - id: cables
+    repo: cables-gl/cables
+    name: Cables.gl
+    paginated: true
 
-skills_repo: ""
+  - id: graphite
+    repo: GraphiteEditor/Graphite
+    name: Graphite
+    paginated: true
 
-openclaw:
-  id: openclaw
-  repo: openclaw/openclaw
-  name: OpenClaw
+  - id: aseprite
+    repo: aseprite/aseprite
+    name: Aseprite
+
+  - id: sonic-pi
+    repo: sonic-pi-net/sonic-pi
+    name: Sonic Pi
+    paginated: true
+
+  - id: manim
+    repo: 3b1b/manim
+    name: Manim
+    paginated: true
+
+  - id: vpype
+    repo: abey79/vpype
+    name: vpype (plotter pipeline)
+
+  # More art tools worth tracking (uncomment to add):
+  # - id: opentoonz
+  #   repo: opentoonz/opentoonz
+  #   name: OpenToonz
+  # - id: supercollider
+  #   repo: supercollider/supercollider
+  #   name: SuperCollider
+  # - id: ossia
+  #   repo: ossia/score
+  #   name: ossia score
+  # - id: blender
+  #   repo: blender/blender
+  #   name: Blender (code mirror)
+
+# ---------------------------------------------------------------------------
+# Flagship framework: the reference project of the field. It gets a deep-dive
+# section plus a comparison against every peer framework below.
+# ---------------------------------------------------------------------------
+flagship:
+  id: p5js
+  repo: processing/p5.js
+  name: p5.js
   paginated: true
 
-openclaw_peers:
-  - id: hermes-agent
-    repo: NousResearch/hermes-agent
-    name: Hermes Agent
+# ---------------------------------------------------------------------------
+# Peer frameworks and libraries artists build with.
+# ---------------------------------------------------------------------------
+peers:
+  - id: threejs
+    repo: mrdoob/three.js
+    name: three.js
     paginated: true
+
+  - id: openframeworks
+    repo: openframeworks/openFrameworks
+    name: openFrameworks
+    paginated: true
+
+  - id: processing
+    repo: processing/processing4
+    name: Processing 4
+
+  - id: openrndr
+    repo: openrndr/openrndr
+    name: OPENRNDR
+
+  - id: nannou
+    repo: nannou-org/nannou
+    name: nannou
+
+  - id: pixijs
+    repo: pixijs/pixijs
+    name: PixiJS
+    paginated: true
+
+  - id: raylib
+    repo: raysan5/raylib
+    name: raylib
+    paginated: true
+
+  - id: love2d
+    repo: love2d/love
+    name: LÖVE
+
+  - id: babylonjs
+    repo: BabylonJS/Babylon.js
+    name: Babylon.js
+    paginated: true
+
+  # - id: openrndr-docs
+  #   repo: openrndr/openrndr-guide
+  #   name: OPENRNDR Guide
+
+# ---------------------------------------------------------------------------
+# Community showcase: a curated list where every PR submits a new tool,
+# library, studio or learning resource. Sorted by discussion, not by date.
+# ---------------------------------------------------------------------------
+showcase_repo: terkelg/awesome-creative-coding
+showcase_name: Awesome Creative Coding
+
+# ---------------------------------------------------------------------------
+# GitHub topics searched daily (7-day activity window, sorted by stars).
+# ---------------------------------------------------------------------------
+trending_topics:
+  - tag: creative-coding
+  - tag: generative-art
+  - tag: procedural-generation
+  - tag: glsl
+  - tag: shader
+  - tag: p5js
+  - tag: processing
+  - tag: plotter
+  - tag: livecoding
+  - tag: art
+
+# ---------------------------------------------------------------------------
+# Hacker News search queries. Every story title must additionally match one of
+# the `hn_keywords` below, which is what keeps the report art-focused.
+# ---------------------------------------------------------------------------
+hn_queries:
+  - generative art
+  - creative coding
+  - shader
+  - demoscene
+  - plotter
+  - live coding
+  - blender
+  - computer graphics
+
+# hn_keywords:  # uncomment to replace the built-in keyword list
+#   - generative art
+#   - plotter
+#   - shader
+#   - live coding
+
+# ---------------------------------------------------------------------------
+# News feeds behind the "Art & Creative Tool News" report.
+# `feed:` takes RSS/Atom (preferred). Use `sitemap:` (+ optional `prefixes:`)
+# for sites without a feed, and `metadata_only: true` when article pages block
+# bots. `max_items:` caps how many entries are reported per run.
+# ---------------------------------------------------------------------------
+web_sites:
+  - id: blender
+    name: Blender
+    feed: https://www.blender.org/feed/
+
+  - id: blender-dev
+    name: Blender Developers Blog
+    feed: https://code.blender.org/feed/
+
+  - id: krita
+    name: Krita
+    feed: https://krita.org/en/index.xml
+
+  - id: processing-foundation
+    name: Processing Foundation (p5.js)
+    feed: https://medium.com/feed/processing-foundation
+
+  - id: inkscape
+    name: Inkscape
+    feed: https://inkscape.org/news/feed/
+
+  # Example: sitemap-based source (no feed available).
+  # - id: touchdesigner
+  #   name: TouchDesigner (Derivative)
+  #   sitemap: https://derivative.ca/sitemap.xml
+  #   prefixes: ["/community/news", "/blog"]
+  #   metadata_only: true
+  #   max_items: 8
+
+# ---------------------------------------------------------------------------
+# Global options
+# ---------------------------------------------------------------------------
+
+# Languages to generate: en, pt, zh. Overridden by the REPORT_LANGS env var.
+# Each language multiplies the number of LLM calls per run.
+report_langs: [en, pt, zh]
+
+# UTC offset used for the report date and rollup windows (Brazil = -3, UTC = 0).
+timezone_offset: -3

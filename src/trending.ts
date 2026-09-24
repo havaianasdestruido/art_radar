@@ -1,6 +1,13 @@
 /**
- * GitHub trending and AI topic search data fetching.
+ * GitHub trending and art-topic search data fetching.
+ *
+ * Two sources feed the "Generative Art Open Source Trends" report:
+ *   1. github.com/trending (HTML) — pre-filtered by art keywords so the LLM
+ *      only sees repos that plausibly belong to the creative-coding beat.
+ *   2. GitHub Search API — one query per configured art topic tag.
  */
+
+import type { TrendingTopic } from "./config.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,33 +34,46 @@ export interface SearchRepo {
 }
 
 export interface TrendingData {
+  /** Trending repos that matched the art keyword pre-filter. */
   trendingRepos: TrendingRepo[];
+  /** How many repos the trending page listed in total (before filtering). */
+  trendingTotal: number;
   searchRepos: SearchRepo[];
   trendingFetchSuccess: boolean;
 }
 
 // ---------------------------------------------------------------------------
-// Constants
+// Keyword matching (word-boundary based, so "art" ≠ "artificial")
 // ---------------------------------------------------------------------------
 
-const SEARCH_QUERIES = [
-  { q: "topic:llm", label: "llm" },
-  { q: "topic:ai-agent", label: "ai-agent" },
-  { q: "topic:rag", label: "rag" },
-  { q: "topic:vector-database", label: "vector-db" },
-  { q: "topic:large-language-model", label: "llm-model" },
-  { q: "topic:machine-learning", label: "ml" },
-];
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function matchesKeywords(text: string, keywords: string[]): boolean {
+  const haystack = text.toLowerCase();
+  return keywords.some((k) => {
+    const needle = k.toLowerCase().trim();
+    if (!needle) return false;
+    if (!/^[\w .-]+$/.test(needle)) return haystack.includes(needle);
+    return new RegExp(`(?<!\\w)${escapeRegex(needle)}(?!\\w)`).test(haystack);
+  });
+}
 
 // ---------------------------------------------------------------------------
 // GitHub Trending HTML fetch
 // ---------------------------------------------------------------------------
 
+/** Repos kept from the trending page when the keyword filter matches. */
+const MAX_TRENDING_KEPT = 25;
+/** Repos kept when the keyword filter matches nothing usable. */
+const TRENDING_FALLBACK = 10;
+
 async function fetchGitHubTrending(): Promise<{ repos: TrendingRepo[]; success: boolean }> {
   try {
     const resp = await fetch("https://github.com/trending?since=daily&spoken_language_code=", {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; big-model-radar/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; art-radar/1.0)",
         Accept: "text/html",
       },
     });
@@ -125,7 +145,7 @@ async function fetchGitHubTrending(): Promise<{ repos: TrendingRepo[]; success: 
 }
 
 // ---------------------------------------------------------------------------
-// GitHub Search API
+// GitHub Search API — one query per art topic
 // ---------------------------------------------------------------------------
 
 interface SearchApiItem {
@@ -141,7 +161,10 @@ interface SearchApiResponse {
   items: SearchApiItem[];
 }
 
-async function searchAiRepos(sevenDaysAgo: string): Promise<SearchRepo[]> {
+/** Repos requested per topic query. */
+const PER_TOPIC = 10;
+
+async function searchArtRepos(topics: TrendingTopic[], sevenDaysAgo: string): Promise<SearchRepo[]> {
   const token = process.env["GITHUB_TOKEN"] ?? "";
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
@@ -153,10 +176,10 @@ async function searchAiRepos(sevenDaysAgo: string): Promise<SearchRepo[]> {
   const all: SearchRepo[] = [];
 
   await Promise.all(
-    SEARCH_QUERIES.map(async ({ q, label }) => {
+    topics.map(async ({ tag, label }) => {
       try {
-        const query = `${q}+pushed:>${sevenDaysAgo}&sort=stars&order=desc`;
-        const url = `https://api.github.com/search/repositories?q=${query}&per_page=15`;
+        const query = `topic:${tag}+pushed:>${sevenDaysAgo}&sort=stars&order=desc`;
+        const url = `https://api.github.com/search/repositories?q=${query}&per_page=${PER_TOPIC}`;
         const resp = await fetch(url, { headers });
         if (!resp.ok) {
           console.error(`  [trending/search] "${label}": HTTP ${resp.status}`);
@@ -193,13 +216,27 @@ async function searchAiRepos(sevenDaysAgo: string): Promise<SearchRepo[]> {
 // Export
 // ---------------------------------------------------------------------------
 
-export async function fetchTrendingData(): Promise<TrendingData> {
+export async function fetchTrendingData(topics: TrendingTopic[], keywords: string[]): Promise<TrendingData> {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-  const [{ repos: trendingRepos, success }, searchRepos] = await Promise.all([
+  const [{ repos: trendingRaw, success }, searchRepos] = await Promise.all([
     fetchGitHubTrending(),
-    searchAiRepos(sevenDaysAgo),
+    searchArtRepos(topics, sevenDaysAgo),
   ]);
 
-  return { trendingRepos, searchRepos, trendingFetchSuccess: success };
+  const matched = trendingRaw.filter((r) => matchesKeywords(`${r.fullName} ${r.description}`, keywords));
+  const trendingRepos =
+    matched.length >= 3 ? matched.slice(0, MAX_TRENDING_KEPT) : trendingRaw.slice(0, TRENDING_FALLBACK);
+
+  console.log(
+    `  [trending] ${matched.length}/${trendingRaw.length} trending repos matched art keywords ` +
+      `(sending ${trendingRepos.length})`,
+  );
+
+  return {
+    trendingRepos,
+    trendingTotal: trendingRaw.length,
+    searchRepos,
+    trendingFetchSuccess: success,
+  };
 }

@@ -1,9 +1,9 @@
-name: Monthly Big Model Radar
+name: Monthly Art Radar
 
 on:
   schedule:
-    # 每月1日 02:00 UTC = 10:00 CST，日报运行后2小时
-    - cron: "0 2 1 * *"
+    # 1st of each month, 12:00 UTC = 09:00 in São Paulo (UTC-3)
+    - cron: "0 12 1 * *"
   workflow_dispatch:
 
 permissions:

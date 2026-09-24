@@ -1,9 +1,9 @@
-name: Weekly Big Model Radar
+name: Weekly Art Radar
 
 on:
   schedule:
-    # 每周一 01:00 UTC = 09:00 CST，日报运行后1小时
-    - cron: "0 1 * * 1"
+    # Mondays 11:00 UTC = 08:00 in São Paulo (UTC-3), one hour after the daily run
+    - cron: "0 11 * * 1"
   workflow_dispatch:
 
 permissions:

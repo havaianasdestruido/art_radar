@@ -1,8 +1,9 @@
 /**
- * Big Model Radar MCP Server — Cloudflare Worker
+ * Art Radar MCP Server — Cloudflare Worker
  *
- * Exposes Big Model Radar digest data as MCP tools so any MCP-compatible
- * client (Claude Desktop, OpenClaw, etc.) can query the latest AI ecosystem reports.
+ * Exposes Art Radar digest data as MCP tools so any MCP-compatible client
+ * (Claude Desktop, OpenClaw, etc.) can query the latest generative art and
+ * creative-coding reports.
  *
  * Tools:
  *   list_reports  — list available dates and report types
@@ -11,23 +12,30 @@
  *   search        — keyword search across recent reports
  */
 
-const PAGES_URL = "https://gsscsd.github.io/big_model_radar";
+const PAGES_URL = "https://havaianasdestruido.github.io/art_radar";
 
 const REPORT_LABELS: Record<string, string> = {
-  "ai-cli": "AI CLI Tools Digest (ZH)",
-  "ai-cli-en": "AI CLI Tools Digest (EN)",
-  "ai-agents": "AI Agents Ecosystem (ZH)",
-  "ai-agents-en": "AI Agents Ecosystem (EN)",
-  "ai-web": "Official AI Content (ZH)",
-  "ai-web-en": "Official AI Content (EN)",
-  "ai-trending": "GitHub AI Trends (ZH)",
-  "ai-trending-en": "GitHub AI Trends (EN)",
-  "ai-hn": "Hacker News AI Community (ZH)",
-  "ai-hn-en": "Hacker News AI Community (EN)",
-  "ai-weekly": "Weekly Rollup (ZH)",
-  "ai-weekly-en": "Weekly Rollup (EN)",
-  "ai-monthly": "Monthly Rollup (ZH)",
-  "ai-monthly-en": "Monthly Rollup (EN)",
+  "art-tools": "Creative Coding Tools Digest (EN)",
+  "art-tools-pt": "Radar de Ferramentas Criativas (PT)",
+  "art-tools-zh": "创意编程工具动态日报 (ZH)",
+  "art-frameworks": "Creative Coding Frameworks Digest (EN)",
+  "art-frameworks-pt": "Radar de Frameworks Criativos (PT)",
+  "art-frameworks-zh": "创意编程框架生态日报 (ZH)",
+  "art-news": "Art & Creative Tool News (EN)",
+  "art-news-pt": "Notícias de Arte e Ferramentas Criativas (PT)",
+  "art-news-zh": "艺术与创意工具资讯 (ZH)",
+  "art-trending": "Generative Art Open Source Trends (EN)",
+  "art-trending-pt": "Tendências de Arte Generativa (PT)",
+  "art-trending-zh": "生成艺术开源趋势日报 (ZH)",
+  "art-hn": "Hacker News Art & Tech Digest (EN)",
+  "art-hn-pt": "Hacker News: Arte e Tecnologia (PT)",
+  "art-hn-zh": "Hacker News 艺术与技术社区动态 (ZH)",
+  "art-weekly": "Art Radar Weekly (EN)",
+  "art-weekly-pt": "Art Radar Semanal (PT)",
+  "art-weekly-zh": "艺术雷达周报 (ZH)",
+  "art-monthly": "Art Radar Monthly (EN)",
+  "art-monthly-pt": "Art Radar Mensal (PT)",
+  "art-monthly-zh": "艺术雷达月报 (ZH)",
 };
 
 interface ManifestDate {
@@ -85,7 +93,7 @@ async function toolGetReport(args: Record<string, unknown>): Promise<string> {
 }
 
 async function toolGetLatest(args: Record<string, unknown>): Promise<string> {
-  const type = String(args["type"] ?? "ai-cli-en").trim();
+  const type = String(args["type"] ?? "art-tools").trim();
   const { dates } = await fetchManifest();
   for (const { date, reports } of dates) {
     if (reports.includes(type)) {
@@ -97,7 +105,9 @@ async function toolGetLatest(args: Record<string, unknown>): Promise<string> {
 }
 
 async function toolSearch(args: Record<string, unknown>): Promise<string> {
-  const query = String(args["query"] ?? "").trim().toLowerCase();
+  const query = String(args["query"] ?? "")
+    .trim()
+    .toLowerCase();
   if (!query) throw new Error("'query' is required");
   const days = Math.min(Number(args["days"] ?? 7), 14);
 
@@ -108,9 +118,9 @@ async function toolSearch(args: Record<string, unknown>): Promise<string> {
 
   await Promise.all(
     slice.map(async ({ date, reports }) => {
-      // Skip -en duplicates and rollups to avoid redundant noise
+      // Search the English variants only, and skip rollups, to avoid noise
       const targets = reports.filter(
-        (r) => !r.endsWith("-en") && !r.includes("weekly") && !r.includes("monthly"),
+        (r) => !r.endsWith("-pt") && !r.endsWith("-zh") && !r.includes("weekly") && !r.includes("monthly"),
       );
       await Promise.all(
         targets.map(async (type) => {
@@ -144,7 +154,7 @@ const TOOLS = [
   {
     name: "list_reports",
     description:
-      "List available digest dates and report types from Big Model Radar. Returns the last N days of available reports.",
+      "List available digest dates and report types from Art Radar (generative art & creative coding). Returns the last N days of available reports.",
     inputSchema: {
       type: "object",
       properties: {
@@ -154,7 +164,7 @@ const TOOLS = [
   },
   {
     name: "get_report",
-    description: "Fetch the full content of a specific Big Model Radar digest report.",
+    description: "Fetch the full content of a specific Art Radar digest report.",
     inputSchema: {
       type: "object",
       properties: {
@@ -162,7 +172,7 @@ const TOOLS = [
         type: {
           type: "string",
           description:
-            "Report type: ai-cli-en, ai-agents-en, ai-web-en, ai-trending-en, ai-hn-en, ai-weekly-en, ai-monthly-en (drop -en suffix for Chinese versions)",
+            "Report type: art-tools, art-frameworks, art-news, art-trending, art-hn, art-weekly, art-monthly (append -pt for Portuguese or -zh for Chinese)",
         },
       },
       required: ["date", "type"],
@@ -176,14 +186,14 @@ const TOOLS = [
       properties: {
         type: {
           type: "string",
-          description: "Report type (default: ai-cli-en). Use list_reports to see all available types.",
+          description: "Report type (default: art-tools). Use list_reports to see all available types.",
         },
       },
     },
   },
   {
     name: "search",
-    description: "Search for a keyword or phrase across recent Big Model Radar digest reports.",
+    description: "Search for a keyword or phrase across recent Art Radar digest reports.",
     inputSchema: {
       type: "object",
       properties: {
@@ -215,7 +225,7 @@ async function handleMcp(body: unknown): Promise<unknown> {
           result: {
             protocolVersion: "2024-11-05",
             capabilities: { tools: {} },
-            serverInfo: { name: "big-model-radar", version: "1.0.0" },
+            serverInfo: { name: "art-radar", version: "1.0.0" },
           },
         };
 
@@ -281,7 +291,7 @@ export default {
     // Health check
     if (request.method === "GET" && url.pathname === "/") {
       return Response.json(
-        { name: "big-model-radar-mcp", status: "ok", tools: TOOLS.map((t) => t.name) },
+        { name: "art-radar-mcp", status: "ok", tools: TOOLS.map((t) => t.name) },
         { headers: CORS },
       );
     }
