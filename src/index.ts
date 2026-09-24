@@ -163,18 +163,22 @@ async function fetchAllData(
         return { prs: [], issues: [] };
       }),
     Promise.all(config.webSites.map((site) => fetchSiteContent(site, webState))),
-    fetchTrendingData(config.trendingTopics, config.hnKeywords).catch((): TrendingData => ({
-      trendingRepos: [],
-      trendingTotal: 0,
-      searchRepos: [],
-      trendingFetchSuccess: false,
-    })),
-    fetchHnData(config.hnQueries, config.hnKeywords).catch((): HnData => ({
-      stories: [],
-      fetchSuccess: false,
-      windowHours: 24,
-      scanned: 0,
-    })),
+    fetchTrendingData(config.trendingTopics, config.hnKeywords).catch(
+      (): TrendingData => ({
+        trendingRepos: [],
+        trendingTotal: 0,
+        searchRepos: [],
+        trendingFetchSuccess: false,
+      }),
+    ),
+    fetchHnData(config.hnQueries, config.hnKeywords).catch(
+      (): HnData => ({
+        stories: [],
+        fetchSuccess: false,
+        windowHours: 24,
+        scanned: 0,
+      }),
+    ),
   ]);
 
   return { fetched, showcase, newsResults, trendingData, hnData };
