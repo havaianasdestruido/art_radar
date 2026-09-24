@@ -1,15 +1,17 @@
 /**
- * Telegram notification — reads manifest.json and sends a message
- * with links to the latest reports. Skips silently if secrets are not set.
+ * Telegram notification — reads manifest.json and sends a message with links to
+ * the latest reports. Skips silently when the secrets are not set.
  *
  * Required env vars:
  *   TELEGRAM_BOT_TOKEN  — bot token from @BotFather
  *   TELEGRAM_CHAT_ID    — channel/group/user chat ID
  * Optional:
- *   PAGES_URL           — GitHub Pages base URL; derived from repo slug when omitted
+ *   PAGES_URL           — GitHub Pages base URL; derived from the repo slug when omitted
  */
 
 import fs from "node:fs";
+import { LANG_BADGE, type Lang, LANGS, reportFileName } from "./lang.ts";
+import { REPORTS } from "./reports.ts";
 
 const BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"] ?? "";
 const CHAT_ID = process.env["TELEGRAM_CHAT_ID"] ?? "";
@@ -28,26 +30,6 @@ function resolvePagesUrl(): string {
 }
 
 const PAGES_URL = resolvePagesUrl();
-
-const ZH_LABELS: Record<string, string> = {
-  "ai-cli": "AI CLI 工具",
-  "ai-agents": "AI Agents 生态",
-  "ai-web": "官网动态",
-  "ai-trending": "GitHub 趋势",
-  "ai-hn": "HN 社区动态",
-  "ai-weekly": "AI 工具生态周报",
-  "ai-monthly": "AI 工具生态月报",
-};
-
-const EN_LABELS: Record<string, string> = {
-  "ai-cli": "AI CLI Tools",
-  "ai-agents": "AI Agents Ecosystem",
-  "ai-web": "Official Updates",
-  "ai-trending": "GitHub Trends",
-  "ai-hn": "HN Community",
-  "ai-weekly": "AI Tools Weekly",
-  "ai-monthly": "AI Tools Monthly",
-};
 
 async function sendTelegram(text: string): Promise<void> {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
@@ -68,31 +50,28 @@ async function sendTelegram(text: string): Promise<void> {
 }
 
 function buildMessage(date: string, reports: string[]): string {
-  const baseReports = reports.filter((r) => !r.endsWith("-en"));
-  const isWeekly = baseReports.includes("ai-weekly");
-  const isMonthly = baseReports.includes("ai-monthly");
+  const ordered = [...REPORTS].sort((a, b) => Number(Boolean(a.rollup)) - Number(Boolean(b.rollup)));
+  const headerIcon = reports.includes("art-monthly") ? "📆" : reports.includes("art-weekly") ? "📅" : "🎨";
 
-  const icon = isMonthly ? "📆" : isWeekly ? "📅" : "📡";
-  const suffix = isMonthly ? " 月报" : isWeekly ? " 周报" : "";
-  const lines: string[] = [`${icon} <b>Big Model Radar${suffix} · ${date}</b>\n`];
+  const lines: string[] = [`${headerIcon} <b>Art Radar · ${date}</b>\n`];
 
-  // Daily reports first, then rollups
-  const ordered = [
-    ...baseReports.filter((r) => !r.includes("weekly") && !r.includes("monthly")),
-    ...baseReports.filter((r) => r.includes("weekly") || r.includes("monthly")),
-  ];
+  for (const report of ordered) {
+    const variants = LANGS.filter((lang: Lang) =>
+      reports.includes(reportFileName(report.id, lang).replace(/\.md$/, "")),
+    );
+    if (variants.length === 0) continue;
 
-  for (const r of ordered) {
-    const zhLabel = ZH_LABELS[r] ?? r;
-    const zhUrl = `${PAGES_URL}/#${date}/${r}`;
-    const enKey = `${r}-en`;
-    if (reports.includes(enKey)) {
-      const enLabel = EN_LABELS[r] ?? "EN";
-      const enUrl = `${PAGES_URL}/#${date}/${enKey}`;
-      lines.push(`• <a href="${zhUrl}">${zhLabel}</a>  ·  <a href="${enUrl}">${enLabel}</a>`);
-    } else {
-      lines.push(`• <a href="${zhUrl}">${zhLabel}</a>`);
-    }
+    const primary = variants.includes("en") ? "en" : variants[0]!;
+    const links = variants
+      .filter((lang) => lang !== primary)
+      .map((lang) => {
+        const file = reportFileName(report.id, lang).replace(/\.md$/, "");
+        return `<a href="${PAGES_URL}/#${date}/${file}">${LANG_BADGE[lang]}</a>`;
+      });
+
+    const mainFile = reportFileName(report.id, primary).replace(/\.md$/, "");
+    const main = `<a href="${PAGES_URL}/#${date}/${mainFile}">${report.title[primary]}</a>`;
+    lines.push(`• ${main}${links.length ? `  ·  ${links.join(" · ")}` : ""}`);
   }
 
   lines.push(`\n<a href="${PAGES_URL}">🌐 Web UI</a>  ·  <a href="${PAGES_URL}/feed.xml">⊕ RSS</a>`);
@@ -123,10 +102,9 @@ async function main(): Promise<void> {
     console.log("[notify] manifest is empty — skipping.");
     return;
   }
-  const { date, reports } = latest;
-  const text = buildMessage(date, reports);
 
-  console.log(`[notify] Sending Telegram message for ${date} (${reports.length} reports)…`);
+  const text = buildMessage(latest.date, latest.reports);
+  console.log(`[notify] Sending Telegram message for ${latest.date} (${latest.reports.length} reports)…`);
   await sendTelegram(text);
   console.log("[notify] Done!");
 }

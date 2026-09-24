@@ -1,44 +1,24 @@
+/**
+ * Generates manifest.json (sidebar data for the Web UI) and feed.xml (RSS 2.0).
+ * Both are committed by the GitHub Actions workflow after every run.
+ */
+
 import fs from "fs";
 import path from "path";
+import { LANGS, LANG_LOCALE } from "./lang.ts";
+import { allReportFileNames, reportLabelMap } from "./reports.ts";
 
 const DIGESTS_DIR = "digests";
 const MANIFEST_PATH = "manifest.json";
 const FEED_PATH = "feed.xml";
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const REPORT_FILES = [
-  "ai-cli",
-  "ai-cli-en",
-  "ai-agents",
-  "ai-agents-en",
-  "ai-web",
-  "ai-web-en",
-  "ai-trending",
-  "ai-trending-en",
-  "ai-hn",
-  "ai-hn-en",
-  "ai-weekly",
-  "ai-weekly-en",
-  "ai-monthly",
-  "ai-monthly-en",
-] as const;
+const REPORT_FILES = allReportFileNames();
+const REPORT_LABELS = reportLabelMap();
 const MAX_FEED_ITEMS = 30;
 
-const REPORT_LABELS: Record<string, string> = {
-  "ai-cli": "AI CLI 工具社区动态日报",
-  "ai-cli-en": "AI CLI Tools Digest",
-  "ai-agents": "AI Agents 生态日报",
-  "ai-agents-en": "AI Agents Ecosystem Digest",
-  "ai-web": "AI 官方内容追踪报告",
-  "ai-web-en": "Official AI Content Report",
-  "ai-trending": "AI 开源趋势日报",
-  "ai-trending-en": "AI Open Source Trends",
-  "ai-hn": "Hacker News AI 社区动态日报",
-  "ai-hn-en": "Hacker News AI Community Digest",
-  "ai-weekly": "AI 工具生态周报",
-  "ai-weekly-en": "AI Tools Weekly Digest",
-  "ai-monthly": "AI 工具生态月报",
-  "ai-monthly-en": "AI Tools Monthly Digest",
-};
+const SITE_TITLE = "Art Radar";
+const SITE_DESCRIPTION =
+  "Daily radar for generative art and creative coding · Radar diário de arte generativa e programação criativa · 生成艺术与创意编程每日雷达";
 
 interface DateEntry {
   date: string;
@@ -80,13 +60,16 @@ function escapeXml(s: string): string {
 
 const SITE_URL = resolveSiteUrl();
 
-const entries = fs
-  .readdirSync(DIGESTS_DIR)
+const entries = (fs.existsSync(DIGESTS_DIR) ? fs.readdirSync(DIGESTS_DIR) : [])
   .filter((name) => DATE_RE.test(name) && fs.statSync(path.join(DIGESTS_DIR, name)).isDirectory())
   .sort()
   .reverse()
   .map((date) => {
-    const reports = REPORT_FILES.filter((r) => fs.existsSync(path.join(DIGESTS_DIR, date, `${r}.md`)));
+    // REPORT_FILES entries already carry the `.md` extension; the manifest and
+    // the feed address reports by their extension-less key.
+    const reports = REPORT_FILES.filter((r) => fs.existsSync(path.join(DIGESTS_DIR, date, r))).map((r) =>
+      r.replace(/\.md$/, ""),
+    );
     return { date, reports };
   })
   .filter((e) => e.reports.length > 0);
@@ -134,10 +117,10 @@ const feedXml =
   `<?xml version="1.0" encoding="UTF-8"?>\n` +
   `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n` +
   `  <channel>\n` +
-  `    <title>Big Model Radar</title>\n` +
+  `    <title>${escapeXml(SITE_TITLE)}</title>\n` +
   `    <link>${SITE_URL}</link>\n` +
-  `    <description>AI 开源生态每日简报 · Daily AI ecosystem digest</description>\n` +
-  `    <language>zh-CN</language>\n` +
+  `    <description>${escapeXml(SITE_DESCRIPTION)}</description>\n` +
+  `    <language>${LANG_LOCALE.en}</language>\n` +
   `    <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml"/>\n` +
   `    <lastBuildDate>${buildDate}</lastBuildDate>\n` +
   itemsXml +
@@ -145,4 +128,4 @@ const feedXml =
   `</rss>\n`;
 
 fs.writeFileSync(FEED_PATH, feedXml);
-console.log(`feed.xml updated: ${feedItems.length} items`);
+console.log(`feed.xml updated: ${feedItems.length} items (languages: ${LANGS.join(", ")})`);

@@ -1,20 +1,22 @@
 {
-  "name": "big-model-radar",
+  "name": "art-radar",
   "version": "1.0.0",
+  "description": "Daily radar for generative art and creative coding \u2014 GitHub, Hacker News and art-tool news digests.",
   "type": "module",
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
+    "format": "prettier --write src test mcp/src index.html",
+    "format:check": "prettier --check src test mcp/src index.html",
     "test": "tsx --test test/**/*.test.ts",
     "manifest": "tsx src/generate-manifest.ts",
     "weekly": "tsx src/weekly.ts",
     "monthly": "tsx src/monthly.ts",
-    "notify": "tsx src/notify.ts"
+    "notify": "tsx src/notify.ts",
+    "probe": "tsx src/probe.ts"
   },
   "dependencies": {
     "js-yaml": "^4.1.1"

@@ -1,9 +1,9 @@
-name: Daily Big Model Radar
+name: Daily Art Radar
 
 on:
   schedule:
-    # 每天 20:13 UTC = 04:13 CST (next day) (UTC+8)
-    - cron: "13 20 * * *"
+    # 10:00 UTC = 07:00 in São Paulo (UTC-3)
+    - cron: "0 10 * * *"
   workflow_dispatch:
 
 permissions:
@@ -13,8 +13,8 @@ permissions:
 jobs:
   digest:
     runs-on: ubuntu-latest
-    # Web content fetching adds ~60-120 s of HTTP requests on incremental runs;
-    # the first-ever run (fetching 50 articles) may need up to 20 min.
+    # News feed fetching is fast (feeds carry the article text); a first-ever
+    # run with several sources may take a few minutes longer.
     timeout-minutes: 25
 
     steps:
@@ -52,12 +52,12 @@ jobs:
             echo "No new digest files to commit"
           else
             DATE=$(date -u +%Y-%m-%d)
-            git commit -m "digest: ${DATE} daily digest"
+            git commit -m "digest: ${DATE} art radar digest"
             git pull --rebase
             git push
           fi
 
-      - name: Update web manifest
+      - name: Update web manifest and RSS feed
         env:
           DIGEST_REPO: ${{ github.repository }}
           PAGES_URL: ${{ vars.PAGES_URL || secrets.PAGES_URL }}
@@ -68,7 +68,7 @@ jobs:
         run: |
           git add manifest.json feed.xml
           if ! git diff --cached --quiet; then
-            git commit -m "chore: update manifest.json"
+            git commit -m "chore: update manifest.json and feed.xml"
             git pull --rebase
             git push
           fi

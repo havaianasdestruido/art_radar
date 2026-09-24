@@ -1,7 +1,10 @@
 /**
  * GitHub API types and fetch helpers.
- * Reads GITHUB_TOKEN and DIGEST_REPO from environment at call time.
+ * Reads GITHUB_TOKEN and DIGEST_REPO from the environment at call time.
  */
+
+import { type Lang } from "./lang.ts";
+import { labelBase, findReport } from "./reports.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -159,11 +162,14 @@ export async function ensureLabel(name: string, color: string): Promise<void> {
 }
 
 /**
- * Fetch trending skills data from a skills repo (e.g. anthropics/skills).
- * PRs sorted by popularity (comment count); issues sorted by comments.
- * No `since` filter — we want all-time hot items, not just the last 24 h.
+ * Fetch community submissions from a curated "awesome" list repository
+ * (e.g. terkelg/awesome-creative-coding), where each PR proposes a new tool,
+ * library, studio or event for the list.
+ *
+ * PRs are sorted by popularity (comment count) and issues by comments — there
+ * is no `since` filter because submissions stay relevant far longer than a day.
  */
-export async function fetchSkillsData(repo: string): Promise<{ prs: GitHubItem[]; issues: GitHubItem[] }> {
+export async function fetchShowcaseData(repo: string): Promise<{ prs: GitHubItem[]; issues: GitHubItem[] }> {
   const [prs, issuesRaw] = await Promise.all([
     githubGet<GitHubItem[]>(`https://api.github.com/repos/${repo}/pulls`, {
       state: "open",
@@ -182,26 +188,26 @@ export async function fetchSkillsData(repo: string): Promise<{ prs: GitHubItem[]
 }
 
 const GITHUB_ISSUE_BODY_LIMIT = 65536;
-const TRUNCATION_NOTICE = "\n\n---\n> ⚠️ 内容超过 GitHub Issue 上限，完整报告见提交的 Markdown 文件。";
 
-export async function createGitHubIssue(title: string, body: string, label: string): Promise<string> {
+const TRUNCATION_NOTICE: Record<Lang, string> = {
+  en: "\n\n---\n> ⚠️ Report exceeded GitHub's issue size limit. The full report is in the committed Markdown file.",
+  pt: "\n\n---\n> ⚠️ O relatório excedeu o limite de tamanho de issues do GitHub. O relatório completo está no arquivo Markdown commitado.",
+  zh: "\n\n---\n> ⚠️ 内容超过 GitHub Issue 上限，完整报告见提交的 Markdown 文件。",
+};
+
+export async function createGitHubIssue(
+  title: string,
+  body: string,
+  label: string,
+  lang: Lang = "en",
+): Promise<string> {
   const digestRepo = process.env["DIGEST_REPO"] ?? "";
+  const notice = TRUNCATION_NOTICE[lang];
   if (body.length > GITHUB_ISSUE_BODY_LIMIT) {
-    body = body.slice(0, GITHUB_ISSUE_BODY_LIMIT - TRUNCATION_NOTICE.length) + TRUNCATION_NOTICE;
+    body = body.slice(0, GITHUB_ISSUE_BODY_LIMIT - notice.length) + notice;
   }
-  const LABEL_COLORS: Record<string, string> = {
-    openclaw: "e11d48",
-    trending: "f9a825",
-    hn: "ff6600",
-    weekly: "7c3aed",
-    monthly: "0d9488",
-    "digest-en": "1d76db",
-    "openclaw-en": "f472b6",
-    "web-en": "6366f1",
-    "trending-en": "fbbf24",
-    "hn-en": "fb923c",
-  };
-  await ensureLabel(label, LABEL_COLORS[label] ?? "0075ca");
+  const color = findReport(labelBase(label))?.color ?? "6b7280";
+  await ensureLabel(label, color);
   const resp = await fetch(`https://api.github.com/repos/${digestRepo}/issues`, {
     method: "POST",
     headers: { ...headers(), "Content-Type": "application/json" },

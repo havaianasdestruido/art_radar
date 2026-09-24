@@ -1,28 +1,33 @@
-# Big Model Radar
+# Art Radar 🎨
 
-English | [中文](./README.zh.md)
+English | [Português](./README.pt.md) | [中文](./README.zh.md)
 
-A GitHub Actions workflow that runs every morning at 08:00 CST. It tracks GitHub activity from AI CLI tools, OpenClaw and its peer projects in the AI agent ecosystem, scrapes official news and research from Anthropic and OpenAI, and monitors the GitHub AI trending repos daily — then publishes bilingual (Chinese + English) daily digests as GitHub Issues and committed Markdown files. Weekly and monthly rollup reports are also generated automatically.
+A GitHub Actions workflow that wakes up every morning and reads the generative-art and creative-coding
+world for you: it tracks GitHub activity in the tools artists run, the frameworks people sketch with,
+the art topics that are trending, the art-and-tech threads on Hacker News, and the blogs of the main
+open-source art tools — then publishes the result as GitHub Issues and committed Markdown files.
+
+Reports are generated in **English, Portuguese and Chinese** (configurable) and can be read as Markdown,
+as GitHub Issues, through the web UI, through RSS or through an MCP server.
 
 ## Web UI
 
-**[https://gsscsd.github.io/big_model_radar](https://gsscsd.github.io/big_model_radar)**
+**`https://<your-user>.github.io/art_radar`**
 
-Browse all historical digests in a clean, dark-themed interface — no login required. Reports are rendered from the Markdown files in this repo via GitHub Pages.
+A dark-themed, no-login interface that renders every report from this repository via GitHub Pages,
+with language toggles (EN / PT / 中文) per report and full-text search across recent digests.
 
 ## RSS Feed
 
-**[https://gsscsd.github.io/big_model_radar/feed.xml](https://gsscsd.github.io/big_model_radar/feed.xml)**
+**`https://<your-user>.github.io/art_radar/feed.xml`**
 
-Subscribe in any RSS reader (Feedly, Reeder, NewsBlur, etc.) to receive new digests automatically. The feed includes the latest 30 reports across all report types, updated daily alongside `manifest.json`.
+Subscribe in Feedly, Reeder, NewsBlur or any other reader. The feed carries the latest 30 reports
+across all languages and report types, refreshed on every run together with `manifest.json`.
 
 ## MCP Server
 
-**`https://big-model-radar-mcp.<your-subdomain>.workers.dev`**
-
-A hosted [Model Context Protocol](https://modelcontextprotocol.io) server that exposes Big Model Radar data as tools. Any MCP-compatible client (Claude Desktop, OpenClaw, etc.) can query the latest AI ecosystem reports directly.
-
-**Available tools:**
+Deploy the hosted [Model Context Protocol](https://modelcontextprotocol.io) server from `mcp/` and any
+MCP client (Claude Desktop, OpenClaw, …) can query the radar directly.
 
 | Tool | Description |
 |------|-------------|
@@ -31,347 +36,224 @@ A hosted [Model Context Protocol](https://modelcontextprotocol.io) server that e
 | `get_report` | Fetch a specific report by date and type |
 | `search` | Keyword search across recent reports |
 
-**Claude Desktop setup** — add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "big-model-radar": {
-      "url": "https://big-model-radar-mcp.<your-subdomain>.workers.dev"
-    }
-  }
-}
-```
-
-Restart Claude Desktop after saving. You can then ask Claude things like:
-- *"What's the latest in AI CLI tools?"* → calls `get_latest`
-- *"Search for Claude Code mentions this week"* → calls `search`
-- *"Show me the AI trending report for 2026-03-05"* → calls `get_report`
-
-**OpenClaw setup** — run the following command:
-
-```bash
-openclaw mcp add --transport http big-model-radar https://big-model-radar-mcp.<your-subdomain>.workers.dev
-```
-
-Or add it manually to `~/.openclaw/openclaw.json`:
-
-```json
-{
-  "mcpServers": {
-    "big-model-radar": {
-      "type": "http",
-      "url": "https://big-model-radar-mcp.<your-subdomain>.workers.dev"
-    }
-  }
-}
-```
-
-You can then ask OpenClaw things like:
-- *"What's the latest in AI CLI tools?"* → calls `get_latest`
-- *"Search for Claude Code mentions this week"* → calls `search`
-- *"Show me the AI trending report for 2026-03-05"* → calls `get_report`
-
-**Self-hosting** — deploy your own instance from the `mcp/` directory:
-
 ```bash
 cd mcp
 pnpm install
 wrangler deploy
 ```
 
-## Telegram Channel
+Then add it to your client, e.g. Claude Desktop:
 
-**[t.me/agents_radar](https://t.me/agents_radar)**
+```json
+{
+  "mcpServers": {
+    "art-radar": { "url": "https://art-radar-mcp.<your-subdomain>.workers.dev" }
+  }
+}
+```
 
-Subscribe to get daily digest notifications pushed directly to Telegram. Each message links to all reports for that day (ZH and EN variants) plus the Web UI and RSS feed.
+## Telegram notifications
+
+Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` and every run posts a short message with links to
+that day's reports in all generated languages.
 
 ## Tracked sources
 
-### AI CLI tools (GitHub)
+### Artist tools — applications and CLIs artists actually run
 
-| Tool | Repository |
-|------|-----------|
-| Claude Code | [anthropics/claude-code](https://github.com/anthropics/claude-code) |
-| OpenAI Codex | [openai/codex](https://github.com/openai/codex) |
-| Gemini CLI | [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) |
-| GitHub Copilot CLI | [github/copilot-cli](https://github.com/github/copilot-cli) |
-| Kimi Code CLI | [MoonshotAI/kimi-cli](https://github.com/MoonshotAI/kimi-cli) |
-| OpenCode | [anomalyco/opencode](https://github.com/anomalyco/opencode) |
-| Qwen Code | [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code) |
+| Tool | Repository | Medium |
+|------|-----------|--------|
+| Cables.gl | [cables-gl/cables](https://github.com/cables-gl/cables) | node-based generative visuals |
+| Graphite | [GraphiteEditor/Graphite](https://github.com/GraphiteEditor/Graphite) | vector graphics / procedural design |
+| Aseprite | [aseprite/aseprite](https://github.com/aseprite/aseprite) | pixel art & sprite animation |
+| Sonic Pi | [sonic-pi-net/sonic-pi](https://github.com/sonic-pi-net/sonic-pi) | live-coded music |
+| Manim | [3b1b/manim](https://github.com/3b1b/manim) | programmatic animation |
+| vpype | [abey79/vpype](https://github.com/abey79/vpype) | pen-plotter pipeline |
 
-### Claude Code Skills (GitHub)
+### Flagship framework + peers
 
-| Source | Repository |
-|--------|-----------|
-| Claude Code Skills | [anthropics/skills](https://github.com/anthropics/skills) |
+[p5.js](https://github.com/processing/p5.js) is the flagship: it gets a deep-dive section and is
+compared against the peer frameworks below — three.js, openFrameworks, Processing 4, OPENRNDR,
+nannou, PixiJS, raylib, LÖVE and Babylon.js. Everything is configurable in `config.yml`.
 
-PRs and issues are fetched without a date filter and sorted by popularity (comment count), so the report always reflects the most actively discussed skills — not just the newest.
+### Community showcase
 
-### OpenClaw + AI agent ecosystem (GitHub)
+[terkelg/awesome-creative-coding](https://github.com/terkelg/awesome-creative-coding) — a curated list
+where every pull request proposes a new tool, library, studio, festival or learning resource. Sorted by
+discussion rather than by date, so the report shows what the community is actually asking for.
 
-OpenClaw is tracked as the primary reference project. Ten peer projects in the personal AI assistant / autonomous agent space are tracked alongside it for cross-ecosystem comparison.
+### GitHub art topics
 
-| Project | Repository | Stars |
-|---------|-----------|-------|
-| OpenClaw | [openclaw/openclaw](https://github.com/openclaw/openclaw) | 240.5k |
-| NanoBot | [HKUDS/nanobot](https://github.com/HKUDS/nanobot) | 26.9k |
-| Zeroclaw | [zeroclaw-labs/zeroclaw](https://github.com/zeroclaw-labs/zeroclaw) | 21.2k |
-| PicoClaw | [sipeed/picoclaw](https://github.com/sipeed/picoclaw) | 21.1k |
-| NanoClaw | [qwibitai/nanoclaw](https://github.com/qwibitai/nanoclaw) | 16.6k |
-| IronClaw | [nearai/ironclaw](https://github.com/nearai/ironclaw) | 3.9k |
-| LobsterAI | [netease-youdao/LobsterAI](https://github.com/netease-youdao/LobsterAI) | 3.0k |
-| TinyClaw | [TinyAGI/tinyclaw](https://github.com/TinyAGI/tinyclaw) | 2.8k |
-| CoPaw | [agentscope-ai/CoPaw](https://github.com/agentscope-ai/CoPaw) | 2.2k |
-| ZeptoClaw | [qhkm/zeptoclaw](https://github.com/qhkm/zeptoclaw) | 394 |
-| EasyClaw | [gaoyangz77/easyclaw](https://github.com/gaoyangz77/easyclaw) | 102 |
-
-### GitHub AI Trending
-
-Two data sources are fetched in parallel every day:
-
-| Source | Details |
-|--------|---------|
-| [github.com/trending](https://github.com/trending?since=daily) | Today's trending repos — parsed from HTML; includes today's new star count |
-| GitHub Search API | Repos active in the last 7 days matching 6 AI topics: `llm`, `ai-agent`, `rag`, `vector-database`, `large-language-model`, `machine-learning` |
-
-The LLM filters out non-AI repos from the trending list, classifies the rest by dimension (AI infrastructure / agents / applications / models / RAG), and extracts trend signals.
+Repositories active in the last 7 days under: `creative-coding`, `generative-art`,
+`procedural-generation`, `glsl`, `shader`, `p5js`, `processing`, `plotter`, `livecoding`, `art`.
+The daily GitHub Trending page is also scraped and pre-filtered with an art keyword list.
 
 ### Hacker News
 
-Top AI stories from the last 24 hours, fetched via the [Algolia HN Search API](https://hn.algolia.com/api). Six queries run in parallel (`AI`, `LLM`, `Claude`, `OpenAI`, `Anthropic`, `machine learning`), results are deduplicated and ranked by points. The top 30 stories are passed to the LLM for analysis.
+Art / creative-coding stories from the last 24 h (widened to 72 h when the beat is quiet), searched via
+the Algolia HN API with art-specific queries and filtered again by an art keyword list, so the report
+stays on topic.
 
-### Official web content (sitemap-based)
+### Art-tool news feeds
 
-| Organization | Site | Tracked sections |
-|---|---|---|
-| Anthropic | [anthropic.com](https://www.anthropic.com) | `/news/`, `/research/`, `/engineering/`, `/learn/` |
-| OpenAI | [openai.com](https://openai.com) | research, publication, release, company, engineering, milestone, learn-guides, safety, product |
+Blender · Blender Developers Blog · Krita · Processing Foundation (p5.js) · Inkscape.
 
-New articles are detected by comparing sitemap `lastmod` timestamps against a persisted state file (`digests/web-state.json`). On the **first run**, up to 25 recent articles per site are fetched and a comprehensive overview report is generated. On subsequent runs, only new or updated URLs trigger a report; if nothing changed, the web report step is skipped entirely.
+Feeds take precedence (the article text comes with the feed, so no page fetching and no bot walls);
+sitemap-based sources are supported too, for sites without a feed.
 
-## Features
+## Reports
 
-- Fetches issues, pull requests, and releases updated in the last 24 hours across all tracked repos
-- Tracks trending Claude Code Skills — sorted by community engagement, not recency
-- Generates a per-tool summary for each CLI repository and a cross-tool comparative analysis
-- Generates a deep OpenClaw project report plus a cross-ecosystem comparison against 10 peer projects
-- Scrapes official Anthropic and OpenAI web content via sitemaps; detects new articles incrementally
-- Monitors GitHub Trending daily + searches 6 AI topic tags; classifies repos by dimension and extracts trend signals
-- Fetches top-30 AI stories from Hacker News (last 24h, ranked by points); generates community sentiment report
-- Publishes GitHub Issues for each report type; commits Markdown files to `digests/YYYY-MM-DD/`
-- Runs on a daily schedule via GitHub Actions; supports manual triggering
-- All tracked repositories are configurable via `config.yml` — no code changes needed
+| Report | Files (EN / PT / ZH) | Notes |
+|--------|----------------------|-------|
+| Creative Coding Tools Digest | `art-tools.md` · `art-tools-pt.md` · `art-tools-zh.md` | Per-tool digests + cross-tool comparison + community showcase |
+| Creative Coding Frameworks Digest | `art-frameworks[-lang].md` | p5.js deep dive + peer comparison + peer digests |
+| Art & Creative Tool News | `art-news[-lang].md` | From the configured feeds; skipped when nothing is new |
+| Generative Art Open Source Trends | `art-trending[-lang].md` | GitHub Trending (art-filtered) + art topic search |
+| Hacker News Art & Tech Digest | `art-hn[-lang].md` | Top art stories, sentiment and reading list |
+| Art Radar Weekly | `art-weekly[-lang].md` | Every Monday, from the last 7 daily digests |
+| Art Radar Monthly | `art-monthly[-lang].md` | On the 1st, from the weeklies (or sampled dailies) |
+
+`art-tools.md` / `art-tools-pt.md` / `art-tools-zh.md` structure:
+
+```
+# Creative Coding Tools Digest YYYY-MM-DD
+
+## Cross-Tool Comparison
+  Landscape overview / Activity table / Shared needs / Differentiation /
+  Community momentum / Trend signals
+
+## Community Showcase
+  Top submissions / What the field is asking for / Pending entries / Curation signals
+
+## Per-Tool Reports
+  <details> Cables.gl   — Highlights / Releases / Hot issues / PR progress /
+                          Workflow trends / Artist pain points
+  <details> Graphite    — ...
+  <details> Aseprite    — ...
+```
+
+`art-frameworks.md` structure:
+
+```
+# Creative Coding Frameworks Digest YYYY-MM-DD
+
+## p5.js Deep Dive
+  Overview / Releases / Progress / Hot topics / Bugs / Roadmap signals /
+  Artist & educator feedback / Backlog watch
+
+## Cross-Framework Comparison
+  Ecosystem overview / Activity table / Flagship position / Shared directions /
+  Differentiation / Momentum / Trend signals
+
+## Peer Framework Reports
+  <details> three.js — ...   <details> openFrameworks — ...   <details> ...
+```
+
+`art-trending.md` structure:
+
+```
+# Generative Art Open Source Trends YYYY-MM-DD
+
+Today's highlights
+Top projects by dimension
+  🎨 Generative & algorithmic art
+  🖌️ Creative coding frameworks & libraries
+  🎛️ Live coding, audio & audiovisual performance
+  🧊 3D, WebGL/WebGPU & rendering
+  🛠️ Art tools & production pipelines
+Trend signal analysis
+Community focus
+```
+
+Issues are labelled per report and language: `art-tools`, `art-tools-pt`, `art-tools-zh`,
+`art-frameworks`, `art-frameworks-pt`, … plus `art-weekly` / `art-monthly`.
 
 ## Setup
 
 ### 1. Fork this repository
 
-### 2. Customize `config.yml` (optional)
+Then enable GitHub Pages (Settings → Pages → Deploy from branch → `main` / root) so the web UI and
+`feed.xml` become available.
 
-Edit `config.yml` in the repo root to add, remove, or replace the tracked repositories. The file is fully commented. No code changes are needed — the pipeline reads it on every run and falls back to built-in defaults if the file is absent.
+### 2. Customise `config.yml` (optional)
 
-```yaml
-# Add a new CLI tool
-cli_repos:
-  - id: my-tool
-    repo: owner/my-ai-cli
-    name: My AI Tool
+`config.yml` is fully commented and controls everything: tools, the flagship project, peer frameworks,
+the showcase repo, GitHub topics, Hacker News queries/keywords, news feeds, languages and the timezone
+used for the report date. Delete a section to fall back to the built-in defaults.
 
-# Add a new peer project to the OpenClaw ecosystem comparison
-openclaw_peers:
-  - id: my-agent
-    repo: owner/my-agent
-    name: My Agent
+### 3. Verify the sources
+
+```bash
+export GITHUB_TOKEN=ghp_xxxxx
+pnpm probe
 ```
 
-### 3. Add Secrets
+`pnpm probe` checks every configured repo, topic, HN query and feed and prints a health report
+(`❌` marks a broken source). There is also a **Source health check** workflow for running it in CI.
 
-Go to **Settings → Secrets and variables → Actions** and add:
+### 4. Add secrets
+
+**Settings → Secrets and variables → Actions:**
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `OPENAI_API_KEY` | ✅ | API key for any OpenAI-compatible endpoint |
-| `OPENAI_BASE_URL` | optional | API endpoint override. Leave unset for OpenAI, or set a compatible provider URL such as `https://api.openai.com/v1` |
-| `OPENAI_MODEL` | optional | Model name passed to `chat/completions`, e.g. `gpt-4.1-mini` |
-| `REPORT_LANGS` | optional | Report languages, e.g. `zh` or `zh,en` (default: `zh`) |
-| `PAGES_URL` | recommended | Public site base URL, e.g. `https://your-user.github.io/big_model_radar`. Prefer a repository variable for this |
-| `TELEGRAM_BOT_TOKEN` | optional | Telegram bot token from [@BotFather](https://t.me/BotFather). If set, a message is sent after each digest run |
-| `TELEGRAM_CHAT_ID` | optional | Telegram chat/channel/group ID to send notifications to. Required if you enable Telegram notifications |
+| `OPENAI_API_KEY` | ✅ | API key for any OpenAI-compatible `chat/completions` endpoint |
+| `OPENAI_BASE_URL` | optional | Endpoint override (default `https://api.openai.com/v1`) |
+| `OPENAI_MODEL` | optional | Model name (default `gpt-4.1-mini`) |
+| `REPORT_LANGS` | optional | e.g. `en,pt,zh` — overrides `report_langs` from config.yml |
+| `PAGES_URL` | recommended | Public site base URL, e.g. `https://your-user.github.io/art_radar` |
+| `TELEGRAM_BOT_TOKEN` | optional | Telegram notifications |
+| `TELEGRAM_CHAT_ID` | optional | Telegram chat/channel id |
 
-> `GITHUB_TOKEN` is provided automatically by GitHub Actions.
->
-> Backward compatibility: `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, and `ANTHROPIC_MODEL` are still accepted as aliases, but new setups should use `OPENAI_*`.
+`ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` / `ANTHROPIC_MODEL` still work as aliases, and
+`GITHUB_TOKEN` is provided automatically by Actions.
 
-**Setting up Telegram notifications** (optional):
-1. Message [@BotFather](https://t.me/BotFather) on Telegram, create a bot, and copy the token
-2. Add the bot to your channel/group, or start a DM with it
-3. Get the chat ID via [@userinfobot](https://t.me/userinfobot) or the [getUpdates](https://core.telegram.org/bots/api#getupdates) API
-4. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` as repository secrets
-5. Add `PAGES_URL` as a repository variable under **Settings → Secrets and variables → Actions → Variables**
+> **Cost note:** each repo entry produces one LLM call per language, so a full English + Portuguese +
+> Chinese run with the default config issues roughly 60 calls per day. Trim `tools` / `peers` or set
+> `report_langs: [en]` to reduce that.
 
-> If neither secret is set, the notification step is silently skipped.
-> If `PAGES_URL` is unset, the site URL is derived from `owner/repo` as `https://owner.github.io/repo`.
+### 5. Choose the schedule
 
-### 3. Enable the workflow
+| Workflow | Cron (UTC) | Local time (São Paulo) |
+|----------|-----------|------------------------|
+| Daily digest | `0 10 * * *` | 07:00 |
+| Weekly rollup | `0 11 * * 1` | Monday 08:00 |
+| Monthly rollup | `0 12 1 * *` | 1st, 09:00 |
 
-Confirm the workflow is enabled in the **Actions** tab.
+Edit the cron expressions in `.github/workflows/` and `timezone_offset` in `config.yml` to match your
+own timezone.
 
-To test immediately, go to **Actions → Daily Big Model Radar → Run workflow**.
-
-> **First run note**: The web content step will fetch up to 50 articles (25 per site) and may take a few extra minutes. Subsequent runs are fast — only new articles are processed.
-
-## Running locally
+## Local development
 
 ```bash
 pnpm install
+pnpm start          # run the full digest
+pnpm probe          # check every configured source
+pnpm test           # unit tests
+pnpm typecheck      # tsc --noEmit
+pnpm lint           # ESLint
+pnpm manifest       # rebuild manifest.json + feed.xml
+pnpm weekly         # weekly rollup
+pnpm monthly        # monthly rollup
+pnpm notify         # send the Telegram notification
+```
 
+Required env vars for local runs:
+
+```bash
 export GITHUB_TOKEN=ghp_xxxxx
-export OPENAI_BASE_URL=https://api.openai.com/v1
-export OPENAI_API_KEY=sk-xxxxxxxx
-export OPENAI_MODEL=gpt-4.1-mini
-export REPORT_LANGS=zh
-export DIGEST_REPO=your-username/big_model_radar  # optional; omit to only write files
-
-pnpm start
+export OPENAI_API_KEY=sk-xxxxx
+export DIGEST_REPO=owner/art_radar   # omit to skip GitHub issue creation
+export REPORT_LANGS=en,pt,zh         # optional
 ```
 
-## Output format
+## What changed from the original fork
 
-Files are written to `digests/YYYY-MM-DD/`:
+This repository started as a fork of an AI/LLM “Big Model Radar”. Every layer has been rewritten for
+the art domain: the tracked sources, the report set and file names, the prompts (now in three
+languages), the trending topics, the Hacker News filter and the news-feed sources, plus the web UI,
+RSS feed, MCP server and Telegram notifications. The previous AI digests were removed.
 
-| File | Content | GitHub Issue label |
-|------|---------|-------------------|
-| `ai-cli.md` | CLI digest — cross-tool comparison + per-tool details | `digest` |
-| `ai-agents.md` | OpenClaw deep report + cross-ecosystem comparison + 10 peer details | `openclaw` |
-| `ai-web.md` | Official web content report (only written when new content exists) | `web` |
-| `ai-trending.md` | GitHub AI trending report — repos classified by dimension + trend signals (only written when data is available) | `trending` |
-| `ai-hn.md` | Hacker News AI community digest — top stories + sentiment analysis (only written when fetch succeeds) | `hn` |
+## Star history
 
-A shared state file `digests/web-state.json` tracks which web URLs have been seen; it is committed alongside the daily digests.
-
-Each report is generated in both Chinese (`ai-cli.md`) and English (`ai-cli-en.md`). The Web UI sidebar shows ZH / EN toggle buttons for reports that have both variants.
-
----
-
-`ai-cli.md` / `ai-cli-en.md` structure:
-```
-## Cross-Tool Comparison
-  Ecosystem overview / Activity comparison table / Shared themes / Differentiation / Trend signals
-
-## Per-Tool Reports
-  <details> Claude Code    — [Claude Code Skills Highlights]
-                             Top skills / Community demand trends / High-potential pending skills
-                             ---
-                             Today's summary / Hot issues / PR progress / Trends
-  <details> OpenAI Codex   — Today's summary / Hot issues / PR progress / Trends
-  <details> Gemini CLI     — ...
-  <details> GitHub Copilot CLI — ...
-  <details> Kimi Code CLI  — ...
-  <details> OpenCode       — ...
-  <details> Qwen Code      — ...
-```
-
-`ai-agents.md` / `ai-agents-en.md` structure:
-```
-Issues: N | PRs: N | Projects covered: 10
-
-## OpenClaw Deep Dive
-  Today's summary / Releases / Project progress / Community highlights /
-  Bug stability / Feature requests / User feedback / Backlog
-
-## Cross-Ecosystem Comparison
-  Ecosystem overview / Activity table / OpenClaw positioning /
-  Shared technical directions / Differentiation / Community maturity / Trend signals
-
-## Peer Project Reports
-  <details> Zeroclaw   — Today's summary / Releases / Progress / ... (8 sections)
-  <details> EasyClaw   — ...
-  <details> LobsterAI  — ...
-  <details> ZeptoClaw  — ...
-  <details> NanoBot    — ...
-  <details> PicoClaw   — ...
-  <details> NanoClaw   — ...
-  <details> IronClaw   — ...
-  <details> TinyClaw   — ...
-  <details> CoPaw      — ...
-```
-
-`ai-web.md` / `ai-web-en.md` structure:
-```
-Sources: anthropic.com (N articles) + openai.com (N articles)
-
-Today's summary
-Anthropic / Claude highlights  (news / research / engineering / learn)
-OpenAI highlights              (research / release / company / safety / ...)
-Strategic signals
-Notable details
-[First full crawl also includes: Content landscape overview]
-```
-
-`ai-trending.md` / `ai-trending-en.md` structure:
-```
-Sources: GitHub Trending + GitHub Search API
-
-Today's summary
-Top repos by dimension
-  🔧 AI Infrastructure  — frameworks / SDKs / inference engines / CLIs
-  🤖 AI Agents          — agent frameworks / multi-agent / automation
-  📦 AI Applications    — vertical products / solutions
-  🧠 Models & Training  — model weights / training frameworks / fine-tuning
-  🔍 RAG & Knowledge    — vector databases / retrieval augmentation
-Trend signal analysis
-Community focus
-```
-
-`ai-hn.md` / `ai-hn-en.md` structure:
-```
-Sources: Hacker News (top-30 AI stories, last 24h)
-
-Today's summary
-Top stories & discussions
-  🔬 Models & Research  — new model releases / papers / benchmarks
-  🛠️ Tools & Engineering — open-source projects / frameworks / engineering practice
-  🏢 Industry news      — company news / funding / product launches
-  💬 Opinions & debate  — Ask HN / Show HN / hot threads
-Community sentiment signals
-Worth reading
-```
-
-`ai-weekly.md` / `ai-weekly-en.md` structure (generated every Monday):
-```
-Coverage: YYYY-MM-DD ~ YYYY-MM-DD  (last 7 daily digests)
-
-Weekly highlights
-Key trends & developments
-Notable releases
-Community momentum
-Outlook
-```
-
-`ai-monthly.md` / `ai-monthly-en.md` structure (generated on the 1st of each month):
-```
-Sources: N weekly reports  (or sampled daily reports if fewer than 2 weeklies available)
-
-Month in review
-Major themes
-Ecosystem shifts
-Top projects & releases
-Looking ahead
-```
-
-Historical digests are stored in [`digests/`](./digests/). Published issues are tagged by type: [`digest`](../../issues?label=digest) · [`openclaw`](../../issues?label=openclaw) · [`web`](../../issues?label=web) · [`trending`](../../issues?label=trending) · [`hn`](../../issues?label=hn) · [`weekly`](../../issues?label=weekly) · [`monthly`](../../issues?label=monthly).
-
-## Schedule
-
-| Workflow | Cron | UTC | CST |
-|----------|------|-----|-----|
-| Daily digest | `0 0 * * *` | 00:00 daily | 08:00 daily |
-| Weekly rollup | `0 1 * * 1` | 01:00 Monday | 09:00 Monday |
-| Monthly rollup | `0 2 1 * *` | 02:00 on the 1st | 10:00 on the 1st |
-
-To change the schedule, edit the cron expressions in the corresponding workflow files under `.github/workflows/`.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=gsscsd/big_model_radar&type=Date)](https://star-history.com/#gsscsd/big_model_radar&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=havaianasdestruido/art_radar&type=Date)](https://star-history.com/#havaianasdestruido/art_radar&Date)
